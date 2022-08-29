@@ -11,6 +11,11 @@ import javax.servlet.http.HttpServletResponse;
 public class MainServlet extends HttpServlet {
 
     private PostController controller;
+    private final String FULL_PATH = "/api/posts";
+    private final String POST_PATH = "/api/posts/\\d+";
+    private final String METHOD_GET = "GET";
+    private final String METHOD_POST = "POST";
+    private final String METHOD_DELETE = "DELETE";
 
     @Override
     public void init() {
@@ -21,28 +26,24 @@ public class MainServlet extends HttpServlet {
 
     @Override
     protected void service(HttpServletRequest req, HttpServletResponse resp) {
-        // если деплоились в root context, то достаточно этого
         try {
             final var path = req.getRequestURI();
             final var method = req.getMethod();
-            // primitive routing
-            if (method.equals("GET") && path.equals("/api/posts")) {
+            if (method.equals(METHOD_GET) && path.equals(FULL_PATH)) {
                 controller.all(resp);
                 return;
             }
-            if (method.equals("GET") && path.matches("/api/posts/\\d+")) {
-                // easy way
-                final long id = Long.parseLong(path.substring(path.lastIndexOf("/") + 1));
+            if (method.equals(METHOD_GET) && path.matches(POST_PATH)) {
+                final long id = GetId(path);
                 controller.getById(id, resp);
                 return;
             }
-            if (method.equals("POST") && path.equals("/api/posts")) {
+            if (method.equals(METHOD_POST) && path.equals(FULL_PATH)) {
                 controller.save(req.getReader(), resp);
                 return;
             }
-            if (method.equals("DELETE") && path.matches("/api/posts/\\d+")) {
-                // easy way
-                final var id = Long.parseLong(path.substring(path.lastIndexOf("/") + 1));
+            if (method.equals(METHOD_DELETE) && path.matches(POST_PATH)) {
+                final var id = GetId(path);
                 controller.removeById(id, resp);
                 return;
             }
@@ -52,5 +53,8 @@ public class MainServlet extends HttpServlet {
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         }
     }
-}
 
+    protected Long GetId(String path) {
+        return Long.parseLong(path.substring(path.lastIndexOf("/") + 1));
+    }
+}

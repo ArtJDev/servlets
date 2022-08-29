@@ -62,7 +62,7 @@ public class PostRepository {
                     for (Post post1 : posts) {           //ищем пост с таким же id
                         if (post1.getId() == post.getId() && !post1.getContent().equals(post.getContent())) { //когда найдется пост с таким же id, сравниваем контент, если контент разный, то
                             posts.remove(post1);         //удаляем старый пост из списка
-                            posts.add(post);             //добавляем новый пост в список
+                            posts.add(post);             //добавляем новый пост в список, ну или можно post1.setContent(post.getContent());
                         }                                //иначе ничего не делаем
                     }
                 } else {                              //иначе, если поста с таки id не существует, то

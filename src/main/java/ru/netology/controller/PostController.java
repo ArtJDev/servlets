@@ -24,7 +24,6 @@ public class PostController {
     }
 
     public void getById(long id, HttpServletResponse response) throws IOException {
-        // TODO: deserialize request & serialize response
         try {
             response.setContentType(APPLICATION_JSON);
             final var data = service.getById(id);
@@ -44,7 +43,6 @@ public class PostController {
     }
 
     public void removeById(long id, HttpServletResponse response) throws IOException {
-        // TODO: deserialize request & serialize response
         try {
             service.removeById(id);
             response.setStatus(HttpServletResponse.SC_ACCEPTED);

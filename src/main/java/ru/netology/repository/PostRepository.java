@@ -40,7 +40,7 @@ public class PostRepository {
                 newId.incrementAndGet();            //увеличиваем newId на 1
             } else {                            //иначе, если id поста != 0, то
                 posts.add(post);                    //просто добавляем пост с этим id в список постов
-                usedId.add(post.getId());           //добавляем newId в список использованных id
+                usedId.add(post.getId());           //добавляем id поста в список использованных id
             }
         } else {                            //иначе если список постов не пустой, то
             if (post.getId() == 0) {            //если пришел пост с id = 0, то

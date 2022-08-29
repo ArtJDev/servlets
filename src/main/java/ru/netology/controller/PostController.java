@@ -23,7 +23,7 @@ public class PostController {
         response.getWriter().print(gson.toJson(data));
     }
 
-    public void getById(long id, HttpServletResponse response) throws IOException {
+    public void getById(long id, HttpServletResponse response) {
         try {
             response.setContentType(APPLICATION_JSON);
             final var data = service.getById(id);
@@ -42,7 +42,7 @@ public class PostController {
         response.getWriter().print(gson.toJson(data));
     }
 
-    public void removeById(long id, HttpServletResponse response) throws IOException {
+    public void removeById(long id, HttpServletResponse response) {
         try {
             service.removeById(id);
             response.setStatus(HttpServletResponse.SC_ACCEPTED);

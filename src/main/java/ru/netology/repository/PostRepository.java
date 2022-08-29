@@ -1,5 +1,6 @@
 package ru.netology.repository;
 
+import org.springframework.stereotype.Repository;
 import ru.netology.model.Post;
 import ru.netology.exception.NotFoundException;
 
@@ -7,7 +8,7 @@ import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicLong;
-
+@Repository
 public class PostRepository {
     private final AtomicLong newId = new AtomicLong();                 //хранит id по порядку
     private final Set<Long> usedId = new CopyOnWriteArraySet<>();      //хранит список использованных id

@@ -1,74 +1,47 @@
 package ru.netology.repository;
 
-import org.springframework.stereotype.Repository;
-import ru.netology.model.Post;
 import ru.netology.exception.NotFoundException;
+import ru.netology.model.Post;
 
 import java.util.*;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
-@Repository
+
 public class PostRepository {
     private final AtomicLong newId = new AtomicLong();                 //хранит id по порядку
-    private final Set<Long> usedId = new CopyOnWriteArraySet<>();      //хранит список использованных id
-    private final Set<Long> freeId = new CopyOnWriteArraySet<>();      //хранит список свободных id
-    private final List<Post> posts = new CopyOnWriteArrayList<>();
+    private final Map<Long, Post> posts = new ConcurrentHashMap<>();
 
     public List<Post> all() {
-        return posts;
+        return new ArrayList<>(posts.values());
     }
 
     public Optional<Post> getById(long id) {
-        for (Post post : posts) {
-            if (post.getId() == id) {
-                return Optional.of(post);
-            }
-        }
-        return Optional.empty();
+        return Optional.of(posts.get(id));
     }
 
     public Post save(Post post) {
-        if (newId.get() == 0) {         //сразу присваиваем newId = 1
-            newId.set(1);
-        }
-
-        if (posts.size() == 0) {            //если список постов пустой, то
+        if (posts.isEmpty()) {              //если список постов пустой, то
             if (post.getId() == 0) {            //если пришел пост с id = 0
-                post.setId(newId.get());            //присваиваем посту id = 1
-                posts.add(post);                    //и добавляем его в лист
-                usedId.add(newId.get());            //добавляем newId в список использованных id
-                newId.incrementAndGet();            //увеличиваем newId на 1
+                post.setId(newId.incrementAndGet());   //присваиваем посту id = 1 (самый первый случай)
+                posts.put(post.getId(), post);          //и добавляем его в лист
             } else {                            //иначе, если id поста != 0, то
-                posts.add(post);                    //просто добавляем пост с этим id в список постов
-                usedId.add(post.getId());           //добавляем id поста в список использованных id
+                posts.put(post.getId(), post);      //просто добавляем пост с этим id в список постов
             }
         } else {                            //иначе если список постов не пустой, то
-            if (post.getId() == 0) {            //если пришел пост с id = 0, то
-                if (!freeId.isEmpty()) {            //смотрим есть ли свободные номера для id, если да, то
-                    post.setId(freeId.stream().min(Comparator.naturalOrder()).get());   //присваиваем посту минимальный id из списка свободных
-                    freeId.remove(post.getId());        //удаляем номер id из списка свободных
-                    posts.add(post);                    //добавляем пост в список постов
-                    usedId.add(post.getId());           //добавляем номер id в список использованных
-                } else {                            //иначе, если свободных номеров для id нет, то
-                    while (usedId.contains(newId.get())) {  //в цикле смотрим, содержится ли следующий по порядку id в списке использованных
-                        newId.incrementAndGet();            //каждый раз увеличивая его на 1
-                    }                                       //как только находится следующий не использованный по порядку номер id, выходим из цикла
-                    post.setId(newId.get());            //присваиваем посту новый newId
-                    posts.add(post);                    //добавляем пост в список постов
-                    usedId.add(newId.get());            //добавляем номер нового id в список использованных
+            if (post.getId() == 0) {            //если пришел пост с id = 0
+                newId.set(1);                              //устанавливаем id = 1
+                while (posts.containsKey(newId.get())) {   //и пробегаемся по ключам мапы до тех пор,
+                    newId.incrementAndGet();               //пока не будет подобран следующий по порядку id
                 }
+                post.setId(newId.get());                   //присваиваем посту новый id
+                posts.put(post.getId(), post);          //кладем пост в мапу
             } else {                            //иначе, если пришел пост с id != 0, то
-                if (usedId.contains(post.getId())) {  //смотрим, есть ли уже такой id в списке использованных, если да, то
-                    for (Post post1 : posts) {           //ищем пост с таким же id
-                        if (post1.getId() == post.getId() && !post1.getContent().equals(post.getContent())) { //когда найдется пост с таким же id, сравниваем контент, если контент разный, то
-                            posts.remove(post1);         //удаляем старый пост из списка
-                            posts.add(post);             //добавляем новый пост в список, ну или можно post1.setContent(post.getContent());
-                        }                                //иначе ничего не делаем
-                    }
-                } else {                              //иначе, если поста с таки id не существует, то
-                    posts.add(post);                     //добавляем пост в список
-                    usedId.add(post.getId());            //добавляем номер id поста в список использованных
+                if (posts.containsKey(post.getId())) {  //смотрим, есть ли уже такой id в мапе, если да, то
+                    if (!posts.get(post.getId()).equals(post)) {    //если старый пост и новый пост отличаются
+                        posts.replace(post.getId(), post);              //заменяем старый пост новым
+                    }                                               //иначе ничего не делаем
+                } else {                                //иначе, если поста с таки id не существует, то
+                    posts.put(post.getId(), post);                  //добавляем пост в мапу
                 }
             }
         }
@@ -76,20 +49,13 @@ public class PostRepository {
     }
 
     public void removeById(long id) {
-        if (usedId.contains(id)) {          //если id содержится в списке использованных id, то
-            for (Post post1 : posts) {          //ищем пост с таким id в списке постов
-                if (post1.getId() == id) {          //если найден, то
-                    posts.remove(post1);                //удаляем пост из списка
-                    usedId.remove(id);                  //удаляем id из списка использованных
-                    freeId.add(id);                     //добавляем id в список свободных
-                }
-            }
-        } else {                            //иначе если поста с таким id нет в списке использованных
+        if (posts.containsKey(id)) {        //если id содержится в списке ключей мапы
+            posts.remove(id);                   //удаляем пост из мапы
+        } else {                            //иначе если поста с таким id нет в мапе
             throw new NotFoundException();      //выбрасываем ошибку в контроллер
         }
         if (posts.isEmpty()) {              //если удалили все посты из списка
-            newId.set(1);                       //выставляем нумерацию на 1
-            freeId.clear();                     //очищаем список свободных id
+            newId.set(0);                       //выставляем нумерацию на 0
         }
     }
 }
